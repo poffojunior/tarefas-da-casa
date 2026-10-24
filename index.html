@@ -1,0 +1,704 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Tarefas da Casa</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark"><meta name="theme-color" content="#0d6e66">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tarefas"><meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;min-height:100%}body{-webkit-tap-highlight-color:transparent}
+body{padding-top:max(0px,env(safe-area-inset-top,0px));padding-bottom:max(96px,calc(96px + env(safe-area-inset-bottom,0px)))}
+/* Layout: app de uma coluna (max 520px), cabeçalho com semana, faixa de dias, lista de tarefas, barra de abas fixa embaixo */
+:root {
+  --bg: #eef3f1;
+  --surface: #ffffff;
+  --surface-2: #e2ebe8;
+  --ink: #12262b;
+  --ink-soft: #52676c;
+  --line: #d3dedb;
+  --accent: #0d6e66;
+  --accent-ink: #ffffff;
+  --mark: #f0b429;
+  --mark-ink: #3a2a00;
+  --ok: #1f8a4c;
+  --ok-bg: #dff3e6;
+  --warn: #b4540a;
+  --warn-bg: #fbe9d6;
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1a1d; --surface: #152428; --surface-2: #1d3136; --ink: #e8f1ef; --ink-soft: #9db3b2;
+    --line: #26393d; --accent: #3cc2b4; --accent-ink: #06201d; --mark: #f0b429; --mark-ink: #2b1f00;
+    --ok: #55d186; --ok-bg: #173826; --warn: #f0a15e; --warn-bg: #3a2614; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1a1d; --surface: #152428; --surface-2: #1d3136; --ink: #e8f1ef; --ink-soft: #9db3b2;
+  --line: #26393d; --accent: #3cc2b4; --accent-ink: #06201d; --mark: #f0b429; --mark-ink: #2b1f00;
+  --ok: #55d186; --ok-bg: #173826; --warn: #f0a15e; --warn-bg: #3a2614; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.4;
+  padding-block: 0 96px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--mark); outline-offset: 2px; }
+.wrap { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; padding-top: 16px; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; }
+.muted { color: var(--ink-soft); }
+.small { font-size: 13px; }
+.label { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; }
+
+/* login */
+.hero { padding-top: 40px; display: flex; flex-direction: column; gap: 8px; }
+.hero h1 { font-size: 40px; line-height: 1.02; font-weight: 800; }
+.hero p { margin: 0; color: var(--ink-soft); max-width: 34ch; }
+.roles { display: grid; gap: 12px; margin-top: 16px; }
+.role {
+  text-align: left; border: 2px solid var(--ink); background: var(--surface); border-radius: 14px; padding: 18px;
+  display: flex; flex-direction: column; gap: 4px; min-height: 88px;
+}
+.role strong { font-family: var(--font-display); font-size: 22px; }
+.role.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.role.primary span { opacity: .85; }
+.back { background: none; border: 0; padding: 8px 0; color: var(--ink-soft); text-align: left; font-weight: 500; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field input, .field select {
+  background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: 12px; min-height: 48px; width: 100%;
+}
+.pin { letter-spacing: .6em; text-align: center; font-size: 24px; font-family: var(--font-display); }
+.btn {
+  background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; min-height: 48px; padding: 0 20px;
+  font-weight: 700;
+}
+.btn.ghost { background: transparent; color: var(--ink); border: 2px solid var(--line); }
+.btn.danger { background: var(--warn-bg); color: var(--warn); }
+.btn:disabled { opacity: .5; }
+.list { display: flex; flex-direction: column; gap: 8px; }
+.pick {
+  display: flex; align-items: center; gap: 12px; background: var(--surface); border: 2px solid var(--line);
+  border-radius: 12px; padding: 12px 14px; min-height: 56px; text-align: left; width: 100%;
+}
+.avatar {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--mark); color: var(--mark-ink);
+  display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; flex: none;
+}
+
+/* app header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.top h1 { font-size: 26px; font-weight: 800; }
+.iconbtn { background: var(--surface); border: 2px solid var(--line); border-radius: 10px; width: 44px; height: 44px; display: grid; place-items: center; flex: none; }
+.weeknav { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.weeknav .range { font-family: var(--font-display); font-weight: 600; font-size: 18px; text-align: center; flex: 1; }
+.summary { background: var(--surface); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.summary .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.bar { height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--ok); border-radius: 99px; }
+.chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.chip {
+  border: 2px solid var(--line); background: var(--surface); border-radius: 99px; padding: 6px 14px; min-height: 40px; white-space: nowrap; font-weight: 500;
+}
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.day {
+  background: var(--surface); border: 2px solid var(--line); border-radius: 12px; padding: 8px 0 6px; display: flex; flex-direction: column;
+  align-items: center; gap: 2px; min-height: 66px;
+}
+.day b { font-family: var(--font-display); font-size: 20px; line-height: 1.1; }
+.day small { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; }
+.day em { font-style: normal; font-size: 11px; font-weight: 700; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.day.today { border-color: var(--mark); }
+.day[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.day[aria-pressed="true"] small, .day[aria-pressed="true"] em { color: var(--accent-ink); opacity: .85; }
+.day.complete em { color: var(--ok); }
+.day[aria-pressed="true"].complete em { color: var(--accent-ink); }
+
+/* tasks */
+.tasks { display: flex; flex-direction: column; gap: 8px; }
+.task { display: flex; align-items: stretch; background: var(--surface); border-radius: 14px; border: 2px solid transparent; }
+.task.done { border-color: var(--ok-bg); }
+.check {
+  flex: none; width: 64px; background: none; border: 0; display: grid; place-items: center; border-radius: 12px 0 0 12px;
+}
+.check span {
+  width: 32px; height: 32px; border-radius: 50%; border: 3px solid var(--ink-soft); display: grid; place-items: center; color: transparent;
+}
+.task.done .check span { background: var(--ok); border-color: var(--ok); color: #fff; }
+.check:disabled { opacity: .45; cursor: default; }
+.tbody { flex: 1; min-width: 0; padding: 12px 12px 12px 0; display: flex; flex-direction: column; gap: 4px; text-align: left; background: none; border: 0; }
+.tbody .title { font-weight: 700; overflow-wrap: anywhere; }
+.task.done .title { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--ink-soft); }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tag { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 99px; background: var(--surface-2); }
+.tag.ok { background: var(--ok-bg); color: var(--ok); }
+.tag.pend { background: var(--warn-bg); color: var(--warn); }
+.empty { text-align: center; padding: 28px 12px; color: var(--ink-soft); background: var(--surface); border-radius: 14px; border: 2px dashed var(--line); }
+
+/* team */
+.member { background: var(--surface); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.member .head { display: flex; align-items: center; gap: 12px; }
+.member .head strong { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.addrow { display: flex; gap: 8px; }
+.addrow input { flex: 1; min-width: 0; background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: 0 12px; min-height: 48px; }
+
+/* tab bar + fab */
+.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 2px solid var(--line);
+  padding: 8px max(16px, env(safe-area-inset-left, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  display: flex; justify-content: center; z-index: 5;
+}
+.tabs .in { width: 100%; max-width: 520px; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
+.tab { background: none; border: 0; border-radius: 10px; min-height: 48px; font-weight: 700; color: var(--ink-soft); }
+.tab[aria-pressed="true"] { background: var(--surface-2); color: var(--ink); }
+.fab {
+  position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  background: var(--mark); color: var(--mark-ink); border: 0; border-radius: 99px; min-height: 56px; padding: 0 22px; font-weight: 800;
+  box-shadow: 0 6px 18px rgba(0,0,0,.25); z-index: 6; display: flex; align-items: center; gap: 8px;
+}
+
+/* sheet */
+.scrim { position: fixed; inset: 0; background: rgba(5,15,18,.55); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+.sheet {
+  background: var(--bg); width: 100%; max-width: 520px; border-radius: 20px 20px 0 0; max-height: 92%; overflow-y: auto;
+  padding: 20px max(16px, env(safe-area-inset-left, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 16px;
+}
+.sheet h2 { font-size: 22px; }
+.dayset { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.dayset .chip { padding: 0; min-height: 44px; font-size: 13px; }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--surface); border-radius: 10px; padding: 12px; border: 0; width: 100%; text-align: left; min-height: 56px; }
+.switch .knob { width: 46px; height: 28px; border-radius: 99px; background: var(--surface-2); position: relative; flex: none; }
+.switch .knob::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--ink-soft); transition: transform .15s; }
+.switch[aria-checked="true"] .knob { background: var(--accent); }
+.switch[aria-checked="true"] .knob::after { transform: translateX(18px); background: var(--accent-ink); }
+.sheetrow { display: flex; gap: 8px; }
+.sheetrow > * { flex: 1; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(150px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; z-index: 30; max-width: 90%; font-weight: 500; }
+.banner { background: var(--warn-bg); color: var(--warn); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style></head><body>
+<div id="app"></div>
+<div id="layer"></div>
+
+<script src="sync.js"></script>
+<script>
+(function () {
+  var DAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+  var DAYS_LONG = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+  var MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
+  var S = {
+    db: null, canWrite: null, loaded: { emp: false, task: false, cfg: false },
+    employees: [], tasks: [], config: null,
+    role: null, empId: null, screen: "choose", tab: "week", filter: "all",
+    weekStart: mondayOf(new Date()), day: (new Date().getDay() + 6) % 7
+  };
+
+  /* ---------- helpers ---------- */
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function mondayOf(d) {
+    var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+    return x;
+  }
+  function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+  function wkKey(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function curWeek() { return mondayOf(new Date()); }
+  function todayIdx() { return (new Date().getDay() + 6) % 7; }
+  function fmtShort(d) { return d.getDate() + " " + MONTHS[d.getMonth()]; }
+  function fmtDone(iso) {
+    var d = new Date(iso);
+    return DAYS[(d.getDay() + 6) % 7].toLowerCase() + ", " + pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + " às " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+  function h(tag, attrs) {
+    var el = document.createElement(tag);
+    attrs = attrs || {};
+    Object.keys(attrs).forEach(function (k) {
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === "class") el.className = v;
+      else if (k.slice(0, 2) === "on") el.addEventListener(k.slice(2), v);
+      else if (k === "text") el.textContent = v;
+      else el.setAttribute(k, v === true ? "" : v);
+    });
+    for (var i = 2; i < arguments.length; i++) add(el, arguments[i]);
+    return el;
+  }
+  function add(el, c) {
+    if (c === null || c === undefined || c === false) return;
+    if (Array.isArray(c)) c.forEach(function (x) { add(el, x); });
+    else if (typeof c === "string" || typeof c === "number") el.appendChild(document.createTextNode(String(c)));
+    else el.appendChild(c);
+  }
+  var CHECK = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  var CHEV_L = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
+  var CHEV_R = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>';
+  var EXIT = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/></svg>';
+  function icon(svg) { var s = h("span"); s.innerHTML = svg; return s.firstChild; }
+  function initial(n) { return (n || "?").trim().charAt(0).toUpperCase(); }
+
+  function toast(msg) {
+    var t = h("div", { class: "toast", role: "status", text: msg });
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 2600);
+  }
+  function fail(e) {
+    toast(e && e.code === "invalid_argument" ? "Sem permissão para salvar. Peça acesso de Contribuidor ao dono do app." : "Não foi possível salvar. Tente de novo.");
+  }
+
+  function saveSession() {
+    try { localStorage.setItem("tc-session", JSON.stringify({ role: S.role, empId: S.empId })); } catch (e) {}
+  }
+  function loadSession() {
+    try {
+      var s = JSON.parse(localStorage.getItem("tc-session") || "null");
+      if (s && (s.role === "manager" || s.role === "employee")) { S.role = s.role; S.empId = s.empId || null; }
+    } catch (e) {}
+  }
+  function logout() {
+    S.role = null; S.empId = null; S.screen = "choose"; S.tab = "week"; S.filter = "all";
+    try { localStorage.removeItem("tc-session"); } catch (e) {}
+    render();
+  }
+
+  /* ---------- data selectors ---------- */
+  function empName(id) {
+    for (var i = 0; i < S.employees.length; i++) if (S.employees[i].id === id) return S.employees[i].name;
+    return null;
+  }
+  function visible(t, wk) {
+    if (t.weekOnly) return t.weekOnly === wk;
+    return !t.createdWeek || t.createdWeek <= wk;
+  }
+  function tasksFor(dayIdx, weekDate, empFilter) {
+    var wk = wkKey(weekDate);
+    return S.tasks.filter(function (t) {
+      return t.day === dayIdx && visible(t, wk) && (empFilter === "all" || t.empId === empFilter);
+    }).sort(function (a, b) { return (a.title || "").localeCompare(b.title || "", "pt-BR"); });
+  }
+  function weekStats(weekDate, empFilter) {
+    var wk = wkKey(weekDate), total = 0, done = 0;
+    for (var d = 0; d < 7; d++) tasksFor(d, weekDate, empFilter).forEach(function (t) {
+      total++; if (t.done && t.done[wk]) done++;
+    });
+    return { total: total, done: done };
+  }
+  function dayStats(dayIdx, weekDate, empFilter) {
+    var wk = wkKey(weekDate), l = tasksFor(dayIdx, weekDate, empFilter);
+    return { total: l.length, done: l.filter(function (t) { return t.done && t.done[wk]; }).length };
+  }
+
+  /* ---------- writes ---------- */
+  function toggleDone(t, weekDate) {
+    var wk = wkKey(weekDate), done = Object.assign({}, t.done || {});
+    if (done[wk]) delete done[wk]; else done[wk] = new Date().toISOString();
+    var body = Object.assign({}, t.body, { done: done });
+    S.db.doc("tasks/" + t.id).set(body).catch(fail);
+  }
+
+  /* ---------- sheets ---------- */
+  function closeSheet() { document.getElementById("layer").replaceChildren(); }
+  function openSheet(content) {
+    var scrim = h("div", { class: "scrim", onclick: function (e) { if (e.target === scrim) closeSheet(); } },
+      h("div", { class: "sheet", role: "dialog", "aria-modal": "true" }, content));
+    document.getElementById("layer").replaceChildren(scrim);
+    var first = scrim.querySelector("input,select");
+    if (first && first.type !== "hidden") first.focus();
+  }
+
+  function taskSheet(task) {
+    var editing = !!task;
+    var wk = wkKey(S.weekStart);
+    var st = {
+      title: task ? task.title : "", empId: task ? task.empId : (S.filter !== "all" ? S.filter : (S.employees[0] ? S.employees[0].id : "")),
+      days: task ? [task.day] : [S.day], repeat: task ? !task.weekOnly : true
+    };
+    if (!S.employees.length) {
+      openSheet([h("h2", { text: "Cadastre um funcionário primeiro" }),
+        h("p", { class: "muted", text: "Para atribuir tarefas, adicione pelo menos um funcionário na aba Equipe." }),
+        h("button", { class: "btn", onclick: function () { closeSheet(); S.tab = "team"; render(); }, text: "Ir para Equipe" })]);
+      return;
+    }
+    var daySet = h("div", { class: "dayset", role: "group", "aria-label": "Dias da semana" });
+    var sw = h("button", { class: "switch", role: "switch", id: "t-repeat", "aria-checked": String(st.repeat), type: "button" });
+    var save = h("button", { class: "btn", type: "button", text: editing ? "Salvar" : "Atribuir tarefa" });
+    var title = h("input", { id: "t-title", type: "text", maxlength: "80", placeholder: "Ex.: Lavar a louça do jantar", value: st.title });
+    var sel = h("select", { id: "t-emp" }, S.employees.map(function (e) {
+      return h("option", { value: e.id, selected: e.id === st.empId, text: e.name });
+    }));
+    function drawDays() {
+      daySet.replaceChildren.apply(daySet, DAYS.map(function (d, i) {
+        return h("button", {
+          class: "chip", type: "button", "aria-pressed": String(st.days.indexOf(i) >= 0), text: d,
+          onclick: function () {
+            if (editing) st.days = [i];
+            else { var p = st.days.indexOf(i); if (p >= 0) st.days.splice(p, 1); else st.days.push(i); }
+            drawDays();
+          }
+        });
+      }));
+    }
+    function drawSwitch() {
+      sw.setAttribute("aria-checked", String(st.repeat));
+      sw.replaceChildren(h("span", {}, h("strong", { text: "Repetir toda semana" }), h("br"),
+        h("span", { class: "small muted", text: st.repeat ? "A tarefa volta toda semana nos dias escolhidos." : "A tarefa vale só para a semana de " + fmtShort(S.weekStart) + "." })),
+        h("span", { class: "knob" }));
+    }
+    sw.addEventListener("click", function () { st.repeat = !st.repeat; drawSwitch(); });
+    drawDays(); drawSwitch();
+    save.addEventListener("click", function () {
+      var name = title.value.trim();
+      if (!name) { toast("Escreva o nome da tarefa."); title.focus(); return; }
+      if (!st.days.length) { toast("Escolha pelo menos um dia."); return; }
+      save.disabled = true;
+      var emp = sel.value;
+      var jobs;
+      if (editing) {
+        jobs = [S.db.doc("tasks/" + task.id).update({ title: name, empId: emp, day: st.days[0], weekOnly: st.repeat ? null : wk })];
+      } else {
+        jobs = st.days.map(function (d) {
+          return S.db.collection("tasks").add({ title: name, empId: emp, day: d, weekOnly: st.repeat ? null : wk, createdWeek: wk, done: {}, createdAt: new Date().toISOString() });
+        });
+      }
+      Promise.all(jobs).then(function () { closeSheet(); toast(editing ? "Tarefa atualizada." : "Tarefa atribuída."); }).catch(function (e) { save.disabled = false; fail(e); });
+    });
+    var delBtn = editing ? h("button", { class: "btn danger", type: "button", text: "Excluir tarefa", onclick: function () {
+      openSheet([h("h2", { text: "Excluir esta tarefa?" }),
+        h("p", { class: "muted", text: "“" + task.title + "” e o histórico de quando foi cumprida serão apagados." }),
+        h("div", { class: "sheetrow" },
+          h("button", { class: "btn ghost", onclick: closeSheet, text: "Cancelar" }),
+          h("button", { class: "btn danger", text: "Excluir", onclick: function () {
+            S.db.doc("tasks/" + task.id).delete().then(function () { closeSheet(); toast("Tarefa excluída."); }).catch(fail);
+          } }))]);
+    } }) : null;
+    openSheet([
+      h("h2", { text: editing ? "Editar tarefa" : "Nova tarefa" }),
+      h("div", { class: "field" }, h("label", { class: "label", for: "t-title", text: "Tarefa" }), title),
+      h("div", { class: "field" }, h("label", { class: "label", for: "t-emp", text: "Funcionário" }), sel),
+      h("div", { class: "field" }, h("span", { class: "label", text: editing ? "Dia" : "Dias (pode marcar vários)" }), daySet),
+      sw,
+      save, delBtn
+    ]);
+  }
+
+  function pinField(id) {
+    return h("input", { id: id, class: "pin", type: "text", inputmode: "numeric", pattern: "[0-9]*", maxlength: "4", autocomplete: "off", placeholder: "0000" });
+  }
+  function employeeSheet() {
+    var input = h("input", { id: "e-name", type: "text", maxlength: "30", placeholder: "Nome do funcionário" });
+    var pin = pinField("e-pin");
+    var btn = h("button", { class: "btn", type: "button", text: "Adicionar" });
+    function go() {
+      var n = input.value.trim(), p = pin.value.trim();
+      if (!n) { input.focus(); return; }
+      if (!/^\d{4}$/.test(p)) { toast("O PIN tem 4 números."); pin.focus(); return; }
+      btn.disabled = true;
+      S.db.collection("employees").add({ name: n, pin: p, createdAt: new Date().toISOString() })
+        .then(function () { closeSheet(); toast(n + " foi adicionado(a)."); })
+        .catch(function (e) { btn.disabled = false; fail(e); });
+    }
+    btn.addEventListener("click", go);
+    pin.addEventListener("keydown", function (e) { if (e.key === "Enter") go(); });
+    openSheet([h("h2", { text: "Novo funcionário" }),
+      h("div", { class: "field" }, h("label", { class: "label", for: "e-name", text: "Nome" }), input),
+      h("div", { class: "field" }, h("label", { class: "label", for: "e-pin", text: "PIN do funcionário (4 números)" }), pin),
+      h("p", { class: "small muted", text: "O funcionário usa esse PIN para entrar. Você pode ver e trocar o PIN depois, em Equipe." }),
+      btn]);
+  }
+
+  function employeePinSheet(emp) {
+    var pin = pinField("e-newpin");
+    var btn = h("button", { class: "btn", type: "button", text: "Salvar PIN" });
+    function go() {
+      var p = pin.value.trim();
+      if (!/^\d{4}$/.test(p)) { toast("O PIN tem 4 números."); pin.focus(); return; }
+      btn.disabled = true;
+      S.db.doc("employees/" + emp.id).update({ pin: p })
+        .then(function () { closeSheet(); toast("PIN de " + emp.name + " atualizado."); })
+        .catch(function (e) { btn.disabled = false; fail(e); });
+    }
+    btn.addEventListener("click", go);
+    pin.addEventListener("keydown", function (e) { if (e.key === "Enter") go(); });
+    openSheet([h("h2", { text: "PIN de " + emp.name }),
+      h("p", { class: "muted", text: emp.pin ? "PIN atual: " + emp.pin : "Esta pessoa ainda não tem PIN. Ela vai criar um no primeiro acesso, ou você define aqui." }),
+      h("div", { class: "field" }, h("label", { class: "label", for: "e-newpin", text: "Novo PIN (4 números)" }), pin),
+      btn]);
+  }
+
+  function removeEmployeeSheet(emp) {
+    var count = S.tasks.filter(function (t) { return t.empId === emp.id; }).length;
+    openSheet([h("h2", { text: "Remover " + emp.name + "?" }),
+      h("p", { class: "muted", text: count ? "As " + count + " tarefa(s) atribuídas a essa pessoa também serão apagadas." : "Essa pessoa não tem tarefas atribuídas." }),
+      h("div", { class: "sheetrow" },
+        h("button", { class: "btn ghost", onclick: closeSheet, text: "Cancelar" }),
+        h("button", { class: "btn danger", text: "Remover", onclick: function () {
+          var jobs = S.tasks.filter(function (t) { return t.empId === emp.id; }).map(function (t) { return S.db.doc("tasks/" + t.id).delete(); });
+          jobs.push(S.db.doc("employees/" + emp.id).delete());
+          Promise.all(jobs).then(function () { closeSheet(); toast(emp.name + " foi removido(a)."); }).catch(fail);
+        } }))]);
+  }
+
+  function syncSheet() {
+    var sync = window.TCSync;
+    var input = h("input", { id: "s-url", type: "url", placeholder: "https://seu-projeto-default-rtdb.firebaseio.com", value: sync.url, autocapitalize: "off", autocomplete: "off" });
+    openSheet([
+      h("h2", { text: "Sincronização entre celulares" }),
+      h("p", { class: "muted", text: sync.remote ? "Conectado a " + sync.url + " (" + sync.status + ")." : "Agora os dados ficam só neste aparelho. Para o gerente e os funcionários verem as mesmas tarefas em celulares diferentes, conecte um banco Firebase Realtime Database." }),
+      h("div", { class: "field" }, h("label", { class: "label", for: "s-url", text: "Endereço do banco" }), input),
+      h("p", { class: "small muted", text: "No console do Firebase: crie um projeto, abra Realtime Database, crie o banco e, em Regras, permita leitura e escrita. Use o mesmo endereço em todos os celulares." }),
+      h("button", { class: "btn", text: "Salvar e reiniciar", onclick: function () {
+        var v = input.value.trim();
+        if (v && !/^https:\/\/[^ ]+$/.test(v)) { toast("O endereço deve começar com https://"); return; }
+        window.TCSync.setUrl(v);
+      } }),
+      sync.remote ? h("button", { class: "btn ghost", text: "Usar só neste aparelho", onclick: function () { window.TCSync.setUrl(""); } }) : null
+    ]);
+  }
+
+  /* ---------- shared pieces ---------- */
+  function dayStrip(readOnlyFuture) {
+    var strip = h("div", { class: "days", role: "group", "aria-label": "Dias da semana" });
+    var isCur = wkKey(S.weekStart) === wkKey(curWeek());
+    var empF = S.role === "employee" ? S.empId : S.filter;
+    for (var i = 0; i < 7; i++) (function (i) {
+      var date = addDays(S.weekStart, i), ds = dayStats(i, S.weekStart, empF);
+      strip.appendChild(h("button", {
+        class: "day" + (isCur && i === todayIdx() ? " today" : "") + (ds.total && ds.done === ds.total ? " complete" : ""),
+        "aria-pressed": String(S.day === i), "aria-label": DAYS_LONG[i] + ", " + date.getDate() + ", " + ds.done + " de " + ds.total + " feitas",
+        onclick: function () { S.day = i; render(); }
+      }, h("small", { text: DAYS[i] }), h("b", { text: date.getDate() }), h("em", { text: ds.total ? ds.done + "/" + ds.total : "–" })));
+    })(i);
+    return strip;
+  }
+
+  function summary(label, st) {
+    var pct = st.total ? Math.round(st.done * 100 / st.total) : 0;
+    return h("div", { class: "summary" },
+      h("div", { class: "row" }, h("span", { class: "label", text: label }), h("strong", { text: st.total ? st.done + " de " + st.total + " feitas" : "Nenhuma tarefa" })),
+      h("div", { class: "bar", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(pct) }, h("i", { style: "width:" + pct + "%" })));
+  }
+
+  function taskRow(t, opts) {
+    var wk = wkKey(S.weekStart), when = t.done && t.done[wk], name = empName(t.empId);
+    var dayDate = addDays(S.weekStart, t.day);
+    var future = opts.employee && wkKey(S.weekStart) === wkKey(curWeek()) && t.day > todayIdx();
+    var locked = opts.employee && (future || wkKey(S.weekStart) !== wkKey(curWeek()));
+    var meta = h("div", { class: "meta" });
+    if (!opts.employee) meta.appendChild(h("span", { class: "tag", text: name || "Sem responsável" }));
+    if (when) meta.appendChild(h("span", { class: "tag ok", text: "Feito " + fmtDone(when) }));
+    else meta.appendChild(h("span", { class: "tag pend", text: future ? "Ainda não é o dia" : (opts.employee ? "A fazer" : "Pendente") }));
+    if (!t.weekOnly && !opts.employee) meta.appendChild(h("span", { class: "tag", text: "Toda semana" }));
+    var row = h("div", { class: "task" + (when ? " done" : "") });
+    if (opts.employee) {
+      row.appendChild(h("button", {
+        class: "check", disabled: locked, "aria-label": (when ? "Desmarcar " : "Marcar como feita: ") + t.title,
+        "aria-pressed": String(!!when), onclick: function () { toggleDone(t, S.weekStart); }
+      }, h("span", { html: "" }, icon(CHECK))));
+      row.appendChild(h("div", { class: "tbody" }, h("span", { class: "title", text: t.title }), meta));
+    } else {
+      row.appendChild(h("div", { class: "check", style: "cursor:default" }, h("span", {}, icon(CHECK))));
+      row.appendChild(h("button", { class: "tbody", onclick: function () { taskSheet(t); }, "aria-label": "Editar " + t.title },
+        h("span", { class: "title", text: t.title }), meta));
+    }
+    return row;
+  }
+
+  /* ---------- screens ---------- */
+  function loginScreen() {
+    var wrap = h("div", { class: "wrap" });
+    if (S.screen === "choose") {
+      wrap.appendChild(h("div", { class: "hero" },
+        h("span", { class: "label", text: "Casa" }),
+        h("h1", { text: "Tarefas da Casa" }),
+        h("p", { text: "Quem manda e quem faz, dia a dia da semana." })));
+      wrap.appendChild(h("div", { class: "roles" },
+        h("button", { class: "role primary", onclick: function () { S.screen = "pin"; render(); } },
+          h("strong", { text: "Entrar como gerente" }), h("span", { text: "Atribuir tarefas e acompanhar o que foi feito" })),
+        h("button", { class: "role", onclick: function () { S.screen = "emp"; render(); } },
+          h("strong", { text: "Entrar como funcionário" }), h("span", { class: "muted", text: "Ver minhas tarefas e marcar as cumpridas" }))));
+      wrap.appendChild(h("button", { class: "back", onclick: syncSheet, text: window.TCSync.remote ? "Sincronização: " + window.TCSync.status : "Dados só neste aparelho. Configurar sincronização" }));
+    } else if (S.screen === "pin") {
+      var setup = !S.config;
+      var pin = h("input", { id: "pin", class: "pin", type: "password", inputmode: "numeric", pattern: "[0-9]*", maxlength: "4", autocomplete: "off" });
+      var go = h("button", { class: "btn", type: "button", text: setup ? "Criar PIN e entrar" : "Entrar" });
+      var doIt = function () {
+        var v = pin.value.trim();
+        if (!/^\d{4}$/.test(v)) { toast("O PIN tem 4 números."); pin.focus(); return; }
+        if (setup) {
+          go.disabled = true;
+          S.db.doc("config/main").set({ pin: v }).then(function () { S.role = "manager"; saveSession(); render(); }).catch(function (e) { go.disabled = false; fail(e); });
+        } else if (v === S.config.pin) { S.role = "manager"; saveSession(); render(); }
+        else { toast("PIN incorreto."); pin.value = ""; pin.focus(); }
+      };
+      go.addEventListener("click", doIt);
+      pin.addEventListener("keydown", function (e) { if (e.key === "Enter") doIt(); });
+      wrap.appendChild(h("button", { class: "back", onclick: function () { S.screen = "choose"; render(); }, text: "← Voltar" }));
+      wrap.appendChild(h("div", { class: "hero" }, h("h1", { text: setup ? "Crie o PIN do gerente" : "PIN do gerente" }),
+        h("p", { text: setup ? "Escolha 4 números. Só quem souber o PIN entra como gerente." : "Digite os 4 números do PIN." })));
+      wrap.appendChild(h("div", { class: "field" }, h("label", { class: "label", for: "pin", text: "PIN" }), pin));
+      wrap.appendChild(go);
+    } else if (S.screen === "emppin" && S.pending) {
+      var emp0 = S.employees.filter(function (x) { return x.id === S.pending.id; })[0] || S.pending;
+      var hasPin = !!emp0.pin;
+      var epin = h("input", { id: "epin", class: "pin", type: "password", inputmode: "numeric", pattern: "[0-9]*", maxlength: "4", autocomplete: "off" });
+      var egoBtn = h("button", { class: "btn", type: "button", text: hasPin ? "Entrar" : "Criar PIN e entrar" });
+      var enterApp = function () {
+        S.role = "employee"; S.empId = emp0.id; S.day = Math.min(todayIdx(), 6); S.weekStart = curWeek(); S.pending = null;
+        saveSession(); render();
+      };
+      var eDo = function () {
+        var v = epin.value.trim();
+        if (!/^\d{4}$/.test(v)) { toast("O PIN tem 4 números."); epin.focus(); return; }
+        if (hasPin) {
+          if (v === emp0.pin) enterApp(); else { toast("PIN incorreto."); epin.value = ""; epin.focus(); }
+        } else {
+          egoBtn.disabled = true;
+          S.db.doc("employees/" + emp0.id).update({ pin: v }).then(enterApp).catch(function (er) { egoBtn.disabled = false; fail(er); });
+        }
+      };
+      egoBtn.addEventListener("click", eDo);
+      epin.addEventListener("keydown", function (e) { if (e.key === "Enter") eDo(); });
+      wrap.appendChild(h("button", { class: "back", onclick: function () { S.pending = null; S.screen = "emp"; render(); }, text: "← Voltar" }));
+      wrap.appendChild(h("div", { class: "hero" }, h("h1", { text: "Olá, " + emp0.name }),
+        h("p", { text: hasPin ? "Digite o seu PIN de 4 números." : "Escolha um PIN de 4 números. Você vai usá-lo para entrar." })));
+      wrap.appendChild(h("div", { class: "field" }, h("label", { class: "label", for: "epin", text: "PIN" }), epin));
+      wrap.appendChild(egoBtn);
+    } else {
+      wrap.appendChild(h("button", { class: "back", onclick: function () { S.screen = "choose"; render(); }, text: "← Voltar" }));
+      wrap.appendChild(h("div", { class: "hero" }, h("h1", { text: "Quem é você?" }), h("p", { text: "Toque no seu nome para ver suas tarefas." })));
+      if (!S.employees.length) wrap.appendChild(h("div", { class: "empty", text: "Nenhum funcionário cadastrado ainda. Peça ao gerente para adicionar você." }));
+      else wrap.appendChild(h("div", { class: "list" }, S.employees.map(function (e) {
+        return h("button", { class: "pick", onclick: function () { S.pending = e; S.screen = "emppin"; render(); } },
+          h("span", { class: "avatar", text: initial(e.name) }), h("strong", { text: e.name }));
+      })));
+    }
+    return wrap;
+  }
+
+  function weekNav() {
+    var end = addDays(S.weekStart, 6), isCur = wkKey(S.weekStart) === wkKey(curWeek());
+    return h("div", { class: "weeknav" },
+      h("button", { class: "iconbtn", "aria-label": "Semana anterior", onclick: function () { S.weekStart = addDays(S.weekStart, -7); render(); } }, icon(CHEV_L)),
+      h("div", { class: "range" }, fmtShort(S.weekStart) + " – " + fmtShort(end),
+        h("div", { class: "small muted", text: isCur ? "Semana atual" : "Toque nas setas para voltar à atual" })),
+      h("button", { class: "iconbtn", "aria-label": "Próxima semana", onclick: function () { S.weekStart = addDays(S.weekStart, 7); render(); } }, icon(CHEV_R)));
+  }
+
+  function managerScreen() {
+    var wrap = h("div", { class: "wrap" });
+    wrap.appendChild(h("div", { class: "top" }, h("h1", { text: S.tab === "week" ? "Semana" : "Equipe" }),
+      h("button", { class: "iconbtn", "aria-label": "Sair", onclick: logout }, icon(EXIT))));
+    if (S.canWrite === false) wrap.appendChild(h("div", { class: "banner", text: "Você só pode ler. Peça acesso de Contribuidor ao dono do app para atribuir tarefas." }));
+
+    if (S.tab === "week") {
+      wrap.appendChild(weekNav());
+      wrap.appendChild(summary("Semana", weekStats(S.weekStart, S.filter)));
+      var chips = h("div", { class: "chips", role: "group", "aria-label": "Filtrar por funcionário" },
+        h("button", { class: "chip", "aria-pressed": String(S.filter === "all"), onclick: function () { S.filter = "all"; render(); }, text: "Todos" }),
+        S.employees.map(function (e) {
+          return h("button", { class: "chip", "aria-pressed": String(S.filter === e.id), onclick: function () { S.filter = e.id; render(); }, text: e.name });
+        }));
+      wrap.appendChild(chips);
+      wrap.appendChild(dayStrip());
+      var list = tasksFor(S.day, S.weekStart, S.filter);
+      wrap.appendChild(h("h2", { text: DAYS_LONG[S.day] + ", " + fmtShort(addDays(S.weekStart, S.day)) }));
+      if (!list.length) wrap.appendChild(h("div", { class: "empty", text: "Nenhuma tarefa neste dia. Toque em “Nova tarefa” para atribuir." }));
+      else wrap.appendChild(h("div", { class: "tasks" }, list.map(function (t) { return taskRow(t, { employee: false }); })));
+    } else {
+      wrap.appendChild(h("div", { class: "weeknav" }, h("div", { class: "range", style: "text-align:left", text: "Progresso de " + fmtShort(S.weekStart) + " a " + fmtShort(addDays(S.weekStart, 6)) })));
+      if (!S.employees.length) wrap.appendChild(h("div", { class: "empty", text: "Ninguém cadastrado ainda. Adicione o primeiro funcionário." }));
+      S.employees.forEach(function (e) {
+        var st = weekStats(S.weekStart, e.id), pct = st.total ? Math.round(st.done * 100 / st.total) : 0;
+        wrap.appendChild(h("div", { class: "member" },
+          h("div", { class: "head" }, h("span", { class: "avatar", text: initial(e.name) }), h("strong", { text: e.name }),
+            h("div", { class: "actions" },
+              h("button", { class: "btn ghost", style: "min-height:40px;padding:0 14px", onclick: function () { employeePinSheet(e); }, text: "PIN" }),
+              h("button", { class: "btn ghost", style: "min-height:40px;padding:0 14px", onclick: function () { removeEmployeeSheet(e); }, text: "Remover" }))),
+          h("div", { class: "row small muted", text: st.total ? st.done + " de " + st.total + " tarefas feitas (" + pct + "%)" : "Sem tarefas nesta semana" }),
+          h("div", { class: "bar" }, h("i", { style: "width:" + pct + "%" }))));
+      });
+      wrap.appendChild(h("button", { class: "btn", onclick: employeeSheet, text: "Adicionar funcionário" }));
+    }
+
+    var out = h("div", {}, wrap);
+    if (S.tab === "week") out.appendChild(h("button", { class: "fab", onclick: function () { taskSheet(null); } }, h("span", { text: "+" }), "Nova tarefa"));
+    out.appendChild(h("nav", { class: "tabs", "aria-label": "Seções" }, h("div", { class: "in" },
+      h("button", { class: "tab", "aria-pressed": String(S.tab === "week"), onclick: function () { S.tab = "week"; render(); }, text: "Semana" }),
+      h("button", { class: "tab", "aria-pressed": String(S.tab === "team"), onclick: function () { S.tab = "team"; render(); }, text: "Equipe" }))));
+    return out;
+  }
+
+  function employeeScreen() {
+    var name = empName(S.empId);
+    if (!name) {
+      if (!S.loaded.emp) return h("div", { class: "wrap" }, h("div", { class: "empty", text: "Carregando…" }));
+      var w = h("div", { class: "wrap" }, h("div", { class: "empty", text: "Esse cadastro não existe mais. Entre de novo e escolha seu nome." }), h("button", { class: "btn", onclick: logout, text: "Voltar" }));
+      return w;
+    }
+    var wrap = h("div", { class: "wrap" });
+    wrap.appendChild(h("div", { class: "top" }, h("div", {}, h("div", { class: "label", text: "Funcionário" }), h("h1", { text: "Olá, " + name })),
+      h("button", { class: "iconbtn", "aria-label": "Sair", onclick: logout }, icon(EXIT))));
+    if (S.canWrite === false) wrap.appendChild(h("div", { class: "banner", text: "Você só pode ler. Peça acesso de Contribuidor ao dono do app para marcar tarefas." }));
+    wrap.appendChild(weekNav());
+    wrap.appendChild(summary("Minha semana", weekStats(S.weekStart, S.empId)));
+    wrap.appendChild(dayStrip());
+    var list = tasksFor(S.day, S.weekStart, S.empId);
+    var ds = dayStats(S.day, S.weekStart, S.empId);
+    wrap.appendChild(h("h2", { text: DAYS_LONG[S.day] + ", " + fmtShort(addDays(S.weekStart, S.day)) }));
+    if (!list.length) wrap.appendChild(h("div", { class: "empty", text: "Nada para fazer neste dia." }));
+    else {
+      wrap.appendChild(h("div", { class: "small muted", text: ds.done === ds.total ? "Tudo feito neste dia." : ds.done + " de " + ds.total + " feitas. Toque no círculo para marcar." }));
+      wrap.appendChild(h("div", { class: "tasks" }, list.map(function (t) { return taskRow(t, { employee: true }); })));
+    }
+    return wrap;
+  }
+
+  /* ---------- render ---------- */
+  function render() {
+    var app = document.getElementById("app");
+    var node;
+    if (!S.db) {
+      node = h("div", { class: "wrap" }, h("div", { class: "hero" }, h("h1", { text: "Tarefas da Casa" }),
+        h("p", { text: "Para usar o app, abra o link já com a sua conta do Claude conectada." })));
+    } else if (!S.loaded.cfg || !S.loaded.emp || !S.loaded.task) {
+      node = h("div", { class: "wrap" }, h("div", { class: "hero" }, h("h1", { text: "Tarefas da Casa" }), h("p", { text: "Carregando…" })));
+    } else if (!S.role) node = loginScreen();
+    else if (S.role === "manager") node = managerScreen();
+    else node = employeeScreen();
+    app.replaceChildren(node);
+  }
+
+  /* ---------- boot ---------- */
+  loadSession();
+  render();
+  (async function () {
+    var user = null, db = null;
+    try { user = await claude.use("user"); } catch (e) {}
+    try { db = await claude.use("db"); } catch (e) {}
+    if (user) { try { S.canWrite = await user.can("data.write"); } catch (e) {} }
+    if (!db) { render(); return; }
+    S.db = db;
+    function onErr() { render(); }
+    db.doc("config/main").onSnapshot(function (s) { S.config = s.exists ? s.data() : null; S.loaded.cfg = true; render(); }, onErr);
+    db.collection("employees").orderBy("createdAt").onSnapshot(function (s) {
+      S.employees = s.docs.map(function (d) { var b = d.data(); return { id: d.id, name: b.name, pin: b.pin || "" }; });
+      S.loaded.emp = true; render();
+    }, onErr);
+    db.collection("tasks").onSnapshot(function (s) {
+      S.tasks = s.docs.map(function (d) {
+        var b = d.data();
+        return { id: d.id, title: b.title, empId: b.empId, day: b.day, weekOnly: b.weekOnly || null, createdWeek: b.createdWeek || null, done: b.done || {}, body: b };
+      });
+      S.loaded.task = true; render();
+    }, onErr);
+  })();
+})();
+</script><script>if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(function () {});</script></body></html>
